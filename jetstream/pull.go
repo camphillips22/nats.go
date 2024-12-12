@@ -107,6 +107,8 @@ type (
 		ThresholdMessages       int
 		ThresholdBytes          int
 		StopAfter               int
+		SubPendingMsgsLimit     int
+		SubPendingBytesLimit    int
 		stopAfterMsgsLeft       chan int
 		notifyOnReconnect       bool
 	}
@@ -257,6 +259,9 @@ func (p *pullConsumer) Consume(handler MessageHandler, opts ...PullConsumeOpt) (
 	inbox := p.jetStream.conn.NewInbox()
 	sub.subscription, err = p.jetStream.conn.Subscribe(inbox, internalHandler)
 	if err != nil {
+		return nil, err
+	}
+	if err := sub.subscription.SetPendingLimits(sub.consumeOpts.SubPendingMsgsLimit, sub.consumeOpts.SubPendingBytesLimit); err != nil {
 		return nil, err
 	}
 	sub.subscription.SetClosedHandler(func(sid string) func(string) {
@@ -450,6 +455,10 @@ func (p *pullConsumer) Messages(opts ...PullMessagesOpt) (MessagesContext, error
 		p.Unlock()
 		return nil, err
 	}
+	if err := sub.subscription.SetPendingLimits(sub.consumeOpts.SubPendingMsgsLimit, sub.consumeOpts.SubPendingBytesLimit); err != nil {
+		return nil, err
+	}
+
 	sub.subscription.SetClosedHandler(func(sid string) func(string) {
 		return func(subject string) {
 			if sub.draining.Load() != 1 {
@@ -937,6 +946,8 @@ func parseConsumeOpts(ordered bool, opts ...PullConsumeOpt) (*consumeOpts, error
 		Heartbeat:               unset,
 		ReportMissingHeartbeats: true,
 		StopAfter:               unset,
+		SubPendingBytesLimit:    nats.DefaultSubPendingBytesLimit,
+		SubPendingMsgsLimit:     nats.DefaultSubPendingMsgsLimit,
 	}
 	for _, opt := range opts {
 		if err := opt.configureConsume(consumeOpts); err != nil {

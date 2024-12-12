@@ -239,6 +239,45 @@ func (nMsgs StopAfter) configureMessages(opts *consumeOpts) error {
 	return nil
 }
 
+// SubPendingBytesLimit sets the number of pending bytes for the consumer's underlying subscription.
+// Zero is not allowed
+type SubPendingBytesLimit int
+
+func (l SubPendingBytesLimit) configureConsume(opts *consumeOpts) error {
+	if l == 0 {
+		return fmt.Errorf("%w: pending bytes limit must be greater than 0", ErrInvalidOption)
+	}
+	opts.SubPendingBytesLimit = int(l)
+	return nil
+}
+
+func (l SubPendingBytesLimit) configureMessages(opts *consumeOpts) error {
+	if l == 0 {
+		return fmt.Errorf("%w: pending bytes limit must be greater than 0", ErrInvalidOption)
+	}
+	opts.SubPendingBytesLimit = int(l)
+	return nil
+}
+
+// SubPendingMsgsLimit sets the number of pending msgs for the consumer's underlying subscription.
+type SubPendingMsgsLimit int
+
+func (l SubPendingMsgsLimit) configureConsume(opts *consumeOpts) error {
+	if l == 0 {
+		return fmt.Errorf("%w: pending msgs limit must be greater than 0", ErrInvalidOption)
+	}
+	opts.SubPendingMsgsLimit = int(l)
+	return nil
+}
+
+func (l SubPendingMsgsLimit) configureMessages(opts *consumeOpts) error {
+	if l == 0 {
+		return fmt.Errorf("%w: pending msgs limit must be greater than 0", ErrInvalidOption)
+	}
+	opts.SubPendingMsgsLimit = int(l)
+	return nil
+}
+
 // ConsumeErrHandler sets custom error handler invoked when an error was
 // encountered while consuming messages It will be invoked for both terminal
 // (Consumer Deleted, invalid request body) and non-terminal (e.g. missing
